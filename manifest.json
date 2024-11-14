@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Paint",
+  "version": "1.2",
+  "description": "Une extension Chrome pour peindre !",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "downloads"
+  ],
+  "host_permissions": [
+    "http://br0nson.ddns.net:5000/*",
+    "*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Paint Test"
+  }
+}
