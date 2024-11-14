@@ -1,3 +1,5 @@
+import subprocess
+
 from flask import Flask, request, jsonify
 import base64
 import os
@@ -22,6 +24,14 @@ connections = set()
 # --- Affichage de l'en-tête du serveur ---
 print("--- Serveur ---")
 
+@app.route('/start_paint', methods=['GET'])
+def start_paint():
+    try:
+        # Lancer paint.py en tant que processus séparé
+        subprocess.Popen(["python", "paint.py"])
+        return jsonify({"status": "success", "message": "Paint lancé"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_data():
